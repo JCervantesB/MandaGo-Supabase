@@ -7,6 +7,7 @@ import LoginPage from '@/pages/login';
 import RegisterPage from '@/pages/register';
 import DashboardPage from '@/pages/dashboard';
 import MessagePage from '@/pages/message';
+import CompanySettingsPage from '@/pages/settings/company';
 
 function MessagePageWrapper() {
   const [searchParams] = useSearchParams();
@@ -56,6 +57,22 @@ function AppRoutes() {
               onMobileOpen={() => setMobileOpen(true)}
             >
               <DashboardPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/company"
+        element={
+          <ProtectedRoute>
+            <Layout
+              sidebarCollapsed={sidebarCollapsed}
+              onSidebarToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+              mobileOpen={mobileOpen}
+              onMobileClose={() => setMobileOpen(false)}
+              onMobileOpen={() => setMobileOpen(true)}
+            >
+              <CompanySettingsPage />
             </Layout>
           </ProtectedRoute>
         }
