@@ -1,0 +1,26 @@
+{
+  "name": "mandago-supabase",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm --parallel -r dev",
+    "dev:mobile": "pnpm --filter mobile dev",
+    "dev:web": "pnpm --filter admin-web dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "clean": "pnpm -r clean",
+    "db:migrate": "pnpm --filter supabase migrate",
+    "db:seed": "pnpm --filter supabase seed"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

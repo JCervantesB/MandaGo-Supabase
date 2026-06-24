@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+apps/admin-web/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Environment files (NEVER commit these)
+.env
+.env.local
+.env.*.local
+.env.production
+*.env
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Testing
+coverage/
+
+# Misc
+*.tgz
+.cache/
+.parcel-cache/
