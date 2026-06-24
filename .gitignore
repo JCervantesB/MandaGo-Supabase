@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-apps/admin-web/
 
 # Build outputs
 dist/
