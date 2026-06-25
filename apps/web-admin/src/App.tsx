@@ -8,6 +8,8 @@ import RegisterPage from '@/pages/register';
 import DashboardPage from '@/pages/dashboard';
 import MessagePage from '@/pages/message';
 import CompanySettingsPage from '@/pages/settings/company';
+import ProfileSettingsPage from '@/pages/settings/profile';
+import UsersSettingsPage from '@/pages/settings/users';
 
 function MessagePageWrapper() {
   const [searchParams] = useSearchParams();
@@ -73,6 +75,38 @@ function AppRoutes() {
               onMobileOpen={() => setMobileOpen(true)}
             >
               <CompanySettingsPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/profile"
+        element={
+          <ProtectedRoute>
+            <Layout
+              sidebarCollapsed={sidebarCollapsed}
+              onSidebarToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+              mobileOpen={mobileOpen}
+              onMobileClose={() => setMobileOpen(false)}
+              onMobileOpen={() => setMobileOpen(true)}
+            >
+              <ProfileSettingsPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/users"
+        element={
+          <ProtectedRoute>
+            <Layout
+              sidebarCollapsed={sidebarCollapsed}
+              onSidebarToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+              mobileOpen={mobileOpen}
+              onMobileClose={() => setMobileOpen(false)}
+              onMobileOpen={() => setMobileOpen(true)}
+            >
+              <UsersSettingsPage />
             </Layout>
           </ProtectedRoute>
         }
