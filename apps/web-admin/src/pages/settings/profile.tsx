@@ -131,15 +131,6 @@ export default function ProfileSettingsPage() {
               onChange={handleChange}
               placeholder="+52 123 456 7890"
             />
-
-            {profile?.companyId && (
-              <div className="pt-4 border-t border-border">
-                <p className="text-sm text-text-secondary">
-                  <span className="font-medium">Rol:</span>{' '}
-                  <span className="capitalize">{profile.role}</span>
-                </p>
-              </div>
-            )}
           </CardContent>
 
           <CardFooter className="flex justify-end">

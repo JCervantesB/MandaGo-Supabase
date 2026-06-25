@@ -1,10 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Card, CardHeader, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
-import { Users, Check, AlertCircle, X, Edit2 } from 'lucide-react';
+import { ListSection } from '@/components/settings/ListSection';
+import { UserRow } from '@/components/settings/UserRow';
+import { UserEditRow } from '@/components/settings/UserEditRow';
+import { CompanyRow } from '@/components/settings/CompanyRow';
+import { DetailModal } from '@/components/settings/DetailModal';
+import { UserDetail } from '@/components/settings/UserDetail';
+import { CompanyDetail } from '@/components/settings/CompanyDetail';
+import { Users, Building2, AlertCircle, Search, X } from 'lucide-react';
 
 interface InternalUser {
   id: string;
@@ -18,11 +22,17 @@ interface InternalUser {
     id: string;
     name: string;
   } | null;
+  created_at?: string;
 }
 
 interface Company {
   id: string;
   name: string;
+  trade_name?: string | null;
+  tax_id?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
 }
 
 export default function UsersSettingsPage() {
@@ -33,6 +43,10 @@ export default function UsersSettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<InternalUser | null>(null);
   const [saving, setSaving] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
+  const [companySearch, setCompanySearch] = useState('');
+  const [selectedUser, setSelectedUser] = useState<InternalUser | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
   useEffect(() => {
     if (profile?.role !== 'admin') {
@@ -41,6 +55,23 @@ export default function UsersSettingsPage() {
     }
     loadData();
   }, [profile?.role]);
+
+  const filteredUsers = useMemo(() => {
+    if (!userSearch.trim()) return users;
+    const term = userSearch.toLowerCase();
+    return users.filter(
+      (u) =>
+        u.full_name.toLowerCase().includes(term) ||
+        u.email.toLowerCase().includes(term) ||
+        u.companies?.name.toLowerCase().includes(term)
+    );
+  }, [users, userSearch]);
+
+  const filteredCompanies = useMemo(() => {
+    if (!companySearch.trim()) return companies;
+    const term = companySearch.toLowerCase();
+    return companies.filter((c) => c.name.toLowerCase().includes(term));
+  }, [companies, companySearch]);
 
   async function loadData() {
     setLoading(true);
@@ -53,7 +84,7 @@ export default function UsersSettingsPage() {
         .order('created_at', { ascending: false }),
       supabase
         .from('companies')
-        .select('id, name')
+        .select('id, name, trade_name, tax_id, email, phone, address')
         .order('name'),
     ]);
 
@@ -72,6 +103,7 @@ export default function UsersSettingsPage() {
     if (!editingUser) return;
 
     setSaving(true);
+
     const { error: updateError } = await supabase
       .from('internal_users')
       .update({
@@ -92,10 +124,18 @@ export default function UsersSettingsPage() {
     loadData();
   }
 
+  function handleViewUser(user: InternalUser) {
+    setSelectedUser(user);
+  }
+
+  function handleViewCompany(company: Company) {
+    setSelectedCompany(company);
+  }
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      <div className="flex items-center justify-center py-14">
+        <div className="h-9 w-9 animate-spin rounded-full border-2 border-border border-t-primary" />
       </div>
     );
   }
@@ -106,8 +146,9 @@ export default function UsersSettingsPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-text">Gestión de Usuarios</h1>
         </div>
+
         <Alert variant="warning">
-          <AlertCircle className="w-4 h-4" />
+          <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             No tienes permisos para acceder a esta página. Solo los administradores pueden gestionar usuarios.
           </AlertDescription>
@@ -117,193 +158,124 @@ export default function UsersSettingsPage() {
   }
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
+    <div className="space-y-8">
+      <header className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-text">Gestión de Usuarios</h1>
-          <p className="text-text-secondary mt-1">
-            Administra los usuarios del sistema
+          <p className="mt-1 text-sm text-text-secondary">
+            Administra usuarios internos y empresas registradas.
           </p>
         </div>
-      </div>
+      </header>
 
       {error && (
-        <Alert variant="error" className="mb-4">
-          <AlertCircle className="w-4 h-4" />
+        <Alert variant="error">
+          <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      <Card>
-        <CardHeader className="flex items-center gap-3">
-          <Users className="w-5 h-5 text-primary" />
-          <div>
-            <h2 className="font-semibold text-text">Usuarios Internos</h2>
-            <p className="text-sm text-text-secondary">
-              {users.length} usuario(s) registrado(s)
-            </p>
+      <ListSection
+        icon={<Users className="h-5 w-5 text-primary" />}
+        title="Usuarios Internos"
+        count={filteredUsers.length}
+        emptyMessage={userSearch ? 'No se encontraron usuarios' : 'No hay usuarios registrados'}
+        search={
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
+            <input
+              type="text"
+              placeholder="Buscar por nombre, email o empresa..."
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+              className="h-9 w-64 rounded-lg border border-border bg-background pl-9 pr-8 text-sm text-text placeholder:text-text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            {userSearch && (
+              <button
+                onClick={() => setUserSearch('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 hover:bg-surface-muted"
+              >
+                <X className="h-3.5 w-3.5 text-text-secondary" />
+              </button>
+            )}
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left px-6 py-3 text-sm font-medium text-text-secondary">Nombre</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-text-secondary">Email</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-text-secondary">Empresa</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-text-secondary">Rol</th>
-                  <th className="text-left px-6 py-3 text-sm font-medium text-text-secondary">Estado</th>
-                  <th className="text-right px-6 py-3 text-sm font-medium text-text-secondary">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.id} className="border-b border-border last:border-0">
-                    <td className="px-6 py-4">
-                      {editingUser?.id === user.id ? (
-                        <Input
-                          value={editingUser.full_name}
-                          onChange={(e) => setEditingUser({ ...editingUser, full_name: e.target.value })}
-                          className="py-1"
-                        />
-                      ) : (
-                        <span className="font-medium text-text">{user.full_name}</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-text-secondary">{user.email}</td>
-                    <td className="px-6 py-4 text-text-secondary">
-                      {user.companies?.name || 'Sin empresa'}
-                    </td>
-                    <td className="px-6 py-4">
-                      {editingUser?.id === user.id ? (
-                        <select
-                          value={editingUser.role}
-                          onChange={(e) => setEditingUser({ ...editingUser, role: e.target.value as 'admin' | 'operator' })}
-                          className="border border-border rounded-lg px-3 py-1.5 text-sm bg-background text-text"
-                        >
-                          <option value="operator">Operador</option>
-                          <option value="admin">Administrador</option>
-                        </select>
-                      ) : (
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            user.role === 'admin'
-                              ? 'bg-primary/10 text-primary'
-                              : 'bg-accent/10 text-accent'
-                          }`}
-                        >
-                          {user.role === 'admin' ? 'Admin' : 'Operador'}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {editingUser?.id === user.id ? (
-                        <select
-                          value={editingUser.is_active ? 'true' : 'false'}
-                          onChange={(e) => setEditingUser({ ...editingUser, is_active: e.target.value === 'true' })}
-                          className="border border-border rounded-lg px-3 py-1.5 text-sm bg-background text-text"
-                        >
-                          <option value="true">Activo</option>
-                          <option value="false">Inactivo</option>
-                        </select>
-                      ) : (
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            user.is_active
-                              ? 'bg-success/10 text-success'
-                              : 'bg-danger/10 text-danger'
-                          }`}
-                        >
-                          {user.is_active ? 'Activo' : 'Inactivo'}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      {editingUser?.id === user.id ? (
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditingUser(null)}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            onClick={handleSave}
-                            disabled={saving}
-                            isLoading={saving}
-                          >
-                            <Check className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingUser(user)}
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {users.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-text-secondary">
-                      No hay usuarios registrados
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+        }
+      >
+        {filteredUsers.length > 0 && (
+          <div className="divide-y divide-border">
+            {filteredUsers.map((user) =>
+              editingUser?.id === user.id ? (
+                <UserEditRow
+                  key={user.id}
+                  user={editingUser}
+                  saving={saving}
+                  onCancel={() => setEditingUser(null)}
+                  onSave={handleSave}
+                  onChange={setEditingUser}
+                />
+              ) : (
+                <UserRow
+                  key={user.id}
+                  user={user}
+                  onEdit={() => setEditingUser(user)}
+                  onView={() => handleViewUser(user)}
+                />
+              )
+            )}
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </ListSection>
 
-      <div className="mt-6">
-        <Card>
-          <CardHeader className="flex items-center gap-3">
-            <Users className="w-5 h-5 text-primary" />
-            <div>
-              <h2 className="font-semibold text-text">Empresas</h2>
-              <p className="text-sm text-text-secondary">
-                {companies.length} empresa(s) registrada(s)
-              </p>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left px-6 py-3 text-sm font-medium text-text-secondary">Nombre</th>
-                    <th className="text-left px-6 py-3 text-sm font-medium text-text-secondary">ID</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {companies.map((company) => (
-                    <tr key={company.id} className="border-b border-border last:border-0">
-                      <td className="px-6 py-4 font-medium text-text">{company.name}</td>
-                      <td className="px-6 py-4 text-text-secondary font-mono text-xs">{company.id}</td>
-                    </tr>
-                  ))}
-                  {companies.length === 0 && (
-                    <tr>
-                      <td colSpan={2} className="px-6 py-12 text-center text-text-secondary">
-                        No hay empresas registradas
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <ListSection
+        icon={<Building2 className="h-5 w-5 text-primary" />}
+        title="Empresas"
+        count={filteredCompanies.length}
+        emptyMessage={companySearch ? 'No se encontraron empresas' : 'No hay empresas registradas'}
+        search={
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
+            <input
+              type="text"
+              placeholder="Buscar empresa..."
+              value={companySearch}
+              onChange={(e) => setCompanySearch(e.target.value)}
+              className="h-9 w-48 rounded-lg border border-border bg-background pl-9 pr-8 text-sm text-text placeholder:text-text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            {companySearch && (
+              <button
+                onClick={() => setCompanySearch('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 hover:bg-surface-muted"
+              >
+                <X className="h-3.5 w-3.5 text-text-secondary" />
+              </button>
+            )}
+          </div>
+        }
+      >
+        {filteredCompanies.length > 0 && (
+          <div className="divide-y divide-border">
+            {filteredCompanies.map((company) => (
+              <CompanyRow key={company.id} company={company} onView={() => handleViewCompany(company)} />
+            ))}
+          </div>
+        )}
+      </ListSection>
+
+      <DetailModal
+        isOpen={selectedUser !== null}
+        onClose={() => setSelectedUser(null)}
+        title="Detalle del Usuario"
+      >
+        {selectedUser && <UserDetail user={selectedUser} />}
+      </DetailModal>
+
+      <DetailModal
+        isOpen={selectedCompany !== null}
+        onClose={() => setSelectedCompany(null)}
+        title="Detalle de la Empresa"
+      >
+        {selectedCompany && <CompanyDetail company={selectedCompany} />}
+      </DetailModal>
     </div>
   );
 }

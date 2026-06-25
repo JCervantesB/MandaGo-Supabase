@@ -12,17 +12,9 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  User,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-
-const menuItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: Home },
-  { path: '/settings/company', label: 'Company', icon: Building2 },
-  { path: '/users', label: 'Users', icon: Users },
-  { path: '/drivers', label: 'Drivers', icon: Truck },
-  { path: '/recipients', label: 'Recipients', icon: Package },
-  { path: '/pickup-points', label: 'Pickup Points', icon: MapPin },
-];
 
 function SidebarContent({
   collapsed = false,
@@ -32,7 +24,20 @@ function SidebarContent({
   onClose?: () => void;
 }) {
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { profile, signOut } = useAuth();
+  const isAdmin = profile?.role === 'admin';
+
+  const menuItems = [
+    { path: '/dashboard', label: 'Dashboard', icon: Home },
+    { path: '/settings/profile', label: 'Mi Perfil', icon: User },
+    { path: '/settings/company', label: 'Mi Empresa', icon: Building2 },
+    ...(isAdmin
+      ? [{ path: '/settings/users', label: 'Usuarios', icon: Users }]
+      : []),
+    { path: '/drivers', label: 'Repartidores', icon: Truck },
+    { path: '/recipients', label: 'Destinatarios', icon: Package },
+    { path: '/pickup-points', label: 'Puntos de Recolección', icon: MapPin },
+  ];
 
   return (
     <div className="flex h-full flex-col">
