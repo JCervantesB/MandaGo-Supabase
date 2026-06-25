@@ -20,3 +20,7 @@ export function Alert({ children, variant = 'error', className = '' }: AlertProp
     </div>
   );
 }
+
+export function AlertDescription({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return <div className={className}>{children}</div>;
+}

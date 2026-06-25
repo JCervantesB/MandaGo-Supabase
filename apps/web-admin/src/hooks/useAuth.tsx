@@ -41,9 +41,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         const { data: userData, error: profileError } = await supabase
           .from('internal_users')
-          .select('*')
+          .select('id, email, full_name, company_id, role')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle() as { data: { id: string; email: string; full_name: string; company_id: string | null; role: 'admin' | 'operator' } | null; error: any };
 
         console.log('Profile query:', userData, profileError);
 
