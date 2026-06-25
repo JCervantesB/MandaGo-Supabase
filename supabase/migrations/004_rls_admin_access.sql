@@ -45,3 +45,10 @@ CREATE POLICY companies_update ON companies
     auth_user_role() = 'admin'
     OR id = auth_user_company_id()
   );
+
+-- ============================================================
+-- Grants for authenticated role
+-- ============================================================
+GRANT USAGE ON SCHEMA public TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.companies TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.internal_users TO authenticated;
