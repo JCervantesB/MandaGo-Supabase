@@ -69,7 +69,7 @@ export default function RegisterPage() {
       return;
     }
 
-    navigate('/message?title=Check your email&description=We sent a confirmation link to your email address. Please click the link to activate your account.');
+    navigate('/message?title=Revisa tu correo&description=Enviamos un enlace de confirmacion a tu correo electronico. Haz clic en el enlace para activar tu cuenta.');
   }
 
   return (

@@ -10,7 +10,7 @@ export default function DashboardPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-text">Dashboard</h1>
         <p className="text-text-secondary mt-1">
-          Welcome{profile?.fullName ? `, ${profile.fullName}` : ''}
+          Bienvenido{profile?.fullName ? `, ${profile.fullName}` : ''}
         </p>
       </div>
 

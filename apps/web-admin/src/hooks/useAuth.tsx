@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { getSupabaseClient } from '@/lib/supabase/client';
 
@@ -35,52 +35,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const supabase = getSupabaseClient();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    let mounted = true;
+
+    async function loadUser(session: any) {
       if (session?.user) {
-        fetchProfile(session.user.id);
+        const { data: userData, error: profileError } = await supabase
+          .from('internal_users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        console.log('Profile query:', userData, profileError);
+
+        if (mounted) {
+          setUser(session.user);
+          if (userData) {
+            setProfile({
+              id: userData.id,
+              email: userData.email,
+              fullName: userData.full_name,
+              companyId: userData.company_id,
+              role: userData.role,
+            });
+          } else if (profileError) {
+            console.error('Profile error:', profileError);
+          }
+          setIsLoading(false);
+        }
       } else {
-        setIsLoading(false);
+        if (mounted) {
+          setUser(null);
+          setProfile(null);
+          setIsLoading(false);
+        }
       }
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
-        setIsLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  async function fetchProfile(userId: string) {
-    const { data: userData, error } = await supabase
-      .from('internal_users')
-      .select('id, email, full_name, company_id, role')
-      .eq('id', userId)
-      .single() as { data: { id: string; email: string; full_name: string; company_id: string | null; role: string } | null; error: unknown };
-
-    if (error || !userData) {
-      setProfile(null);
-      setIsLoading(false);
-      return;
     }
 
-    setProfile({
-      id: userData.id,
-      email: userData.email,
-      fullName: userData.full_name,
-      companyId: userData.company_id,
-      role: userData.role as 'admin' | 'operator' | null,
+    supabase.auth.getSession().then(({ data }) => {
+      loadUser(data.session);
     });
-    setIsLoading(false);
-  }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      loadUser(session);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
